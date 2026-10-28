@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Special Card for You 💖</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Google Fonts: Prompt & Mitr -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * {
+            font-family: 'Prompt', sans-serif;
+        }
+        .font-title {
+            font-family: 'Mitr', sans-serif;
+        }
+        /* Custom smooth movement for dodging button */
+        #noBtn {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        /* Background floating heart animations */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-20px) rotate(10deg); opacity: 0.8; }
+            100% { transform: translateY(-40px) rotate(-10deg); opacity: 0; }
+        }
+        .heart-particle {
+            position: absolute;
+            animation: float 4s ease-in infinite;
+            pointer-events: none;
+        }
+        /* Glassmorphic Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        /* Pulse Animation */
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); box-shadow: 0 10px 25px -5px rgba(244, 114, 182, 0.4); }
+            50% { transform: scale(1.03); box-shadow: 0 20px 35px -5px rgba(244, 114, 182, 0.6); }
+        }
+        .pulse-btn {
+            animation: pulseGlow 2s infinite;
+        }
+        .modal-backdrop {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 250ms ease, visibility 250ms ease, backdrop-filter 250ms ease;
+            backdrop-filter: blur(0);
+            -webkit-backdrop-filter: blur(0);
+        }
+        .modal-backdrop.is-open {
+            opacity: 1;
+            visibility: visible;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .modal-panel {
+            opacity: 0;
+            transform: translateY(12px) scale(.96);
+            transition: opacity 250ms ease, transform 250ms cubic-bezier(.2,.8,.2,1);
+        }
+        .modal-backdrop.is-open .modal-panel {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(0) scale(.6) rotate(0deg); }
+            15% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-130px) scale(1.25) rotate(25deg); }
+        }
+        .coupon-particle {
+            position: fixed;
+            z-index: 60;
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-rose-100 via-pink-50 to-amber-50 min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
+
+    <!-- Floating Background Hearts -->
+    <div id="heartContainer" class="fixed inset-0 pointer-events-none z-0"></div>
+
+    <section id="passwordGate" class="glass-card w-full max-w-md rounded-3xl border border-pink-100 p-6 text-center shadow-2xl sm:p-8" aria-labelledby="gateTitle">
+        <div class="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-pink-100 text-4xl shadow-inner">🔐</div>
+        <span class="mb-2 inline-block rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold tracking-wide text-rose-600">การ์ดพิเศษสำหรับเราสองคน 💖</span>
+        <h1 id="gateTitle" class="font-title mb-2 text-2xl font-bold text-gray-800">ใส่รหัสวันเกิดของเรา</h1>
+        <p class="mb-6 text-sm leading-relaxed text-gray-500">ใส่วันเกิดของน้องและพี่ตามลำดับ<br>รูปแบบ DDMMDDMM</p>
+        <form id="passwordForm" class="space-y-3">
+            <label for="passwordInput" class="sr-only">รหัสวันเกิด รูปแบบ DDMMDDMM</label>
+            <input id="passwordInput" type="password" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="off" placeholder="DDMMDDMM" class="w-full rounded-2xl border border-rose-100 bg-white/80 px-4 py-3 text-center text-lg tracking-[0.3em] text-gray-700 outline-none transition focus:border-rose-300 focus:ring-4 focus:ring-rose-100" required>
+            <p id="passwordError" class="min-h-5 text-sm text-rose-600" role="status" aria-live="polite"></p>
+            <button type="submit" class="w-full rounded-2xl bg-gradient-to-r from-rose-400 to-pink-500 px-6 py-3 font-medium text-white shadow-lg transition-all hover:-translate-y-0.5 hover:from-rose-500 hover:to-pink-600 active:scale-95">
+                เปิดการ์ด 💌
+            </button>
+        </form>
+    </section>
+
+    <!-- MAIN CONTAINER -->
+    <main id="mainContent" class="hidden w-full max-w-md z-10 relative">
+
+        <!-- STEP 1: INTERACTIVE QUESTION CARD -->
+        <div id="cardStep1" class="glass-card rounded-3xl p-6 sm:p-8 shadow-2xl text-center border border-pink-100 transition-all duration-500 transform scale-100">
+            <!-- Top Cute Icon -->
+            <div class="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-5 text-4xl shadow-inner animate-bounce">
+                🥺
+            </div>
+
+            <!-- Title & Subtitle -->
+            <span class="inline-block px-3 py-1 bg-rose-100 text-rose-600 rounded-full text-xs font-semibold tracking-wide mb-2">คำถามพิเศษเฉพาะวันนี้ 💖</span>
+            <h1 class="font-title text-2xl sm:text-3xl font-bold text-gray-800 mb-3">ขออนุญาตเป็น Safe Zone และคอยดูแลเธอแบบนี้ต่อไปได้มั้ย?</h1>
+            <p class="text-sm text-gray-500 mb-8 leading-relaxed">
+                ไม่ว่าจะเจอเรื่องเหนื่อยแค่ไหนจากค่ายหรือซ้อมดนตรี อยากให้รู้ว่าตรงนี้มีคนคอยซัปพอร์ตเสมอเลยนะ
+            </p>
+
+            <!-- Buttons Action Container -->
+            <div id="buttonArea" class="relative min-h-[140px] flex flex-col sm:flex-row items-center justify-center gap-4">
+                <!-- YES BUTTON -->
+                <button id="yesBtn" onclick="handleYesClick()" class="pulse-btn w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white font-medium rounded-2xl shadow-lg transition-all transform active:scale-95 text-base sm:text-lg">
+                    ยอมให้ดูแล 💖
+                </button>
+
+                <!-- NO BUTTON (DODGING GIMMICK) -->
+                <button id="noBtn" onmouseenter="dodgeButton()" onclick="handleNoClick()" class="w-full sm:w-auto px-6 py-3.5 bg-gray-100 text-gray-600 font-medium rounded-2xl shadow hover:bg-gray-200 transition-all text-sm sm:text-base z-20">
+                    ไม่อนุญาต 😜
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: CELEBRATION & MESSAGE CARD (Hidden by default) -->
+        <div id="cardStep2" class="glass-card rounded-3xl p-6 sm:p-8 shadow-2xl text-center border border-pink-100 hidden opacity-0 transform translate-y-4 transition-all duration-700">
+            <!-- Header Icon -->
+            <div class="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-md">
+                🎉
+            </div>
+
+            <h2 class="font-title text-2xl font-bold text-gray-800 mb-1">Happy Birthday! 🎂</h2>
+            <p class="text-xs text-rose-500 font-medium mb-4">Happy 16th Birthday</p>
+
+            <!-- Sweet Message Container -->
+            <div class="bg-white/70 rounded-2xl p-4 sm:p-5 text-left text-gray-700 text-sm leading-relaxed mb-6 border border-pink-50 shadow-sm space-y-3">
+                <p>✨ <strong>สุขสันต์วันเกิดนะค้าบบ</strong> ขอให้ปีนี้เป็นปีที่ใจดีกับน้อง มีแต่รอยยิ้ม สุขภาพแข็งแรง และผ่านทุกอย่างไปได้ด้วยดีนะอ้วน</p>
+                <p>เก่งมากแล้วที่อดทนและพยายามมาขนาดนี้ ไม่ว่าเรื่องสอบ A-Level หรือเรื่องซ้อม จะเหนื่อยแค่ไหน อยากให้รู้ว่ามีพี่คอยส่งกำลังใจให้อยู่เสมอเลย</p>
+                <p class="text-rose-600 font-medium text-center pt-1">"ขอบคุณที่เข้ามาเป็นเรื่องน่ารักๆในชีวิตพี่นะ" 🤍</p>
+            </div>
+
+            <!-- Photo Collage / Polaroids Placeholder -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-white p-2 rounded-xl shadow-md transform -rotate-2 hover:rotate-0 transition duration-300">
+                    <img src="S__15663108.jpg" alt="Memory 1" class="w-full h-32 object-cover object-top rounded-lg mb-2">
+                    <p class="text-[10px] text-gray-500 font-mono text-center">Memory #01 📸</p>
+                </div>
+                <div class="bg-white p-2 rounded-xl shadow-md transform rotate-2 hover:rotate-0 transition duration-300">
+                    <img src="S__15663110.jpg" alt="Always Beside You" class="w-full h-32 object-cover object-top rounded-lg mb-2">
+                    <p class="text-[10px] text-gray-500 font-mono text-center">Always Beside You ✨</p>
+                </div>
+            </div>
+
+            <div class="grid gap-3 mb-6">
+                <button type="button" onclick="openModal('letter')" class="w-full px-5 py-3 rounded-2xl bg-rose-100 hover:bg-rose-200 text-rose-700 font-medium transition-all hover:-translate-y-0.5">
+                    <i class="fa-solid fa-envelope mr-2" aria-hidden="true"></i>💌 อ่านความในใจ
+                </button>
+                <button type="button" onclick="openModal('coupons')" class="w-full px-5 py-3 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-medium transition-all hover:-translate-y-0.5">
+                    <i class="fa-solid fa-bolt mr-2" aria-hidden="true"></i>⚡ โหมดเติมพลังด่วน
+                </button>
+            </div>
+
+            <!-- Refresh / Reset Button -->
+            <button onclick="location.reload()" class="text-xs text-gray-400 hover:text-gray-600 underline transition">
+                เปิดการ์ดอีกครั้ง 🔄
+            </button>
+        </div>
+
+    </main>
+
+    <div id="modalBackdrop" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4" aria-hidden="true">
+        <section id="modalPanel" class="modal-panel relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-3xl bg-[#fffdfb] p-6 sm:p-8 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+            <button type="button" onclick="closeModal()" aria-label="ปิดหน้าต่าง" class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition">
+                <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
+            </button>
+            <div id="modalContent" class="pt-2"></div>
+        </section>
+    </div>
+    <div id="couponToast" class="fixed bottom-5 left-1/2 z-[70] -translate-x-1/2 translate-y-4 opacity-0 pointer-events-none rounded-2xl bg-gray-800 px-5 py-3 text-center text-sm text-white shadow-xl transition-all" role="status" aria-live="polite"></div>
+
+    <script>
+        const passwordForm = document.getElementById('passwordForm');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordError = document.getElementById('passwordError');
+
+        passwordForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (passwordInput.value === '31102603') {
+                document.getElementById('passwordGate').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                passwordInput.value = '';
+                passwordError.textContent = '';
+            } else {
+                passwordError.textContent = 'รหัสยังไม่ถูกนะ ลองใส่วันเกิดตามรูปแบบอีกครั้ง 💭';
+                passwordInput.select();
+            }
+        });
+
+        let dodgeCount = 0;
+        const noBtn = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+
+        // Function for dodging No button
+        function dodgeButton() {
+            dodgeCount++;
+            
+            // Generate random positions within visible boundary
+            const buttonArea = document.getElementById('buttonArea');
+            const rect = buttonArea.getBoundingClientRect();
+            
+            // Random translation offsets
+            const x = (Math.random() - 0.5) * (rect.width - 80);
+            const y = (Math.random() - 0.5) * 120;
+            
+            noBtn.style.transform = `translate(${x}px, ${y}px)`;
+
+            // Change button text if tried multiple times
+            if (dodgeCount === 2) {
+                noBtn.innerText = "กดไม่ทันหรอก 😜";
+            } else if (dodgeCount === 4) {
+                noBtn.innerText = "อนุญาตเหอะนะ 🥺";
+            } else if (dodgeCount >= 6) {
+                // Transform into another YES button if tried too hard!
+                noBtn.innerText = "ยอมให้ดูแลก็ได้! 💕";
+                noBtn.className = yesBtn.className;
+                noBtn.onclick = handleYesClick;
+                noBtn.style.transform = 'none';
+            }
+        }
+
+        // Touch device support for dodging
+        noBtn.addEventListener('touchstart', function(e) {
+            if (dodgeCount < 6) {
+                e.preventDefault();
+                dodgeButton();
+            }
+        });
+
+        function handleNoClick() {
+            if (dodgeCount < 6) {
+                dodgeButton();
+            }
+        }
+
+        // Handle YES Click Event
+        function handleYesClick() {
+            // Trigger Heart Confetti
+            triggerConfetti();
+
+            // Card Transition Animation
+            const card1 = document.getElementById('cardStep1');
+            const card2 = document.getElementById('cardStep2');
+
+            card1.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                card1.classList.add('hidden');
+                card2.classList.remove('hidden');
+                setTimeout(() => {
+                    card2.classList.remove('opacity-0', 'translate-y-4');
+                }, 50);
+            }, 400);
+        }
+
+        // Heart Confetti animation using canvas-confetti
+        function triggerConfetti() {
+            const count = 200;
+            const defaults = {
+                origin: { y: 0.7 }
+            };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, {
+                spread: 26,
+                startVelocity: 55,
+                colors: ['#f472b6', '#fda4af', '#e11d48']
+            });
+            fire(0.2, {
+                spread: 60,
+                colors: ['#ffffff', '#f43f5e']
+            });
+            fire(0.35, {
+                spread: 100,
+                decay: 0.91,
+                scalar: 1.1,
+                colors: ['#f472b6', '#fda4af', '#ffffff']
+            });
+        }
+
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const modalContent = document.getElementById('modalContent');
+        const modalPanel = document.getElementById('modalPanel');
+        const couponToast = document.getElementById('couponToast');
+        let lastFocusedElement = null;
+        let toastTimer;
+
+        function openModal(type) {
+            lastFocusedElement = document.activeElement;
+
+            if (type === 'letter') {
+                modalContent.innerHTML = `
+                    <span class="mb-3 inline-flex items-center gap-2 rounded-full bg-rose-100 px-3 py-1 text-xs font-medium text-rose-600">
+                        <i class="fa-solid fa-heart" aria-hidden="true"></i> น้องมายด้วยความห่วงใย
+                    </span>
+                    <h2 id="modalTitle" class="font-title mb-5 pr-8 text-2xl font-semibold text-gray-800">อ่านความในใจ 🤍</h2>
+                    <div class="space-y-4 text-sm leading-7 text-gray-600 sm:text-base">
+                        <p>ถึงน้องมาย,</p>
+                        <p>ช่วงนี้รู้เลยว่าต้องแบกรับอะไรหลายอย่างพร้อมๆ กัน ทั้งเรื่องเรียน เรื่องสอบ แล้วยังต้องมาเจอเรื่องวุ่นวายอีก อยากบอกให้รู้นะว่าน้องเก่งและอดทนมากๆ แล้ว แค่ผ่านไปได้ในแต่ละวันก็ถือว่าทำได้ดีมากแล้วจริงๆ</p>
+                        <p>ไม่ต้องกังวลเรื่องข้างหลัง หรือรู้สึกว่าต้องพยายามเกรงใจใครนะ priorities ตอนนี้คือเรื่องสุขภาพ ร่างกาย และอนาคตของน้องเองอันดับหนึ่งเลย เอาตัวเองออกมาจากจุดที่ทำให้บั่นทอนจิตใจ แล้วทุ่มเทให้กับสิ่งที่คู่ควรกับความตั้งใจของน้องดีกว่า</p>
+                        <p>อยากให้รู้ไว้เสมอว่า ไม่ว่าจะเจอวันตึงๆ หรือเหนื่อยแค่ไหน น้องจะมีพี่คอยซัพพอร์ตอยู่ตรงนี้เสมอ ไม่ต้องแบกทุกอย่างไว้คนเดียวคนเดียวนะ พักผ่อนเยอะๆ กินของอร่อยๆ แล้วไปลุยสอบให้เต็มที่ เชื่อมั่นในตัวเองเหมือนที่เราเชื่อมั่นในตัวน้องนะ</p>
+                        <p>ขอบคุณมากๆนะที่คอยอยู่ข้างๆ แล้วก็ส่งกำลังใจให้กันตลอด ไม่ว่าจะเจอเรื่องอะไรตึงๆ หรือเหนื่อยแค่ไหน แค่รู้ว่ามีน้องคอยซัพพอร์ตอยู่มันช่วยชาร์จพลังได้เยอะมากๆเลย หลังจากนี้ก็สู้ไปด้วยกันยาวๆ มีอะไรก็มาแชร์กันได้เสมอ ขอให้อยู่ด้วยกันนานๆ แบบนี้ไปเรื่อยๆ เลยนะคับ🤍</p>
+                    </div>
+                `;
+            } else if (type === 'coupons') {
+                modalContent.innerHTML = `
+                    <span class="mb-3 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                        <i class="fa-solid fa-bolt" aria-hidden="true"></i> เติมพลังให้หัวใจ
+                    </span>
+                    <h2 id="modalTitle" class="font-title mb-2 pr-8 text-2xl font-semibold text-gray-800">คูปองเติมพลังด่วน ⚡</h2>
+                    <p class="mb-5 text-sm text-gray-500">เลือกคูปองที่อยากใช้ได้เลยนะ ✨</p>
+                    <div class="space-y-3">
+                        <button type="button" onclick="redeemCoupon(1, this)" class="w-full rounded-2xl border border-amber-100 bg-amber-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-100">
+                            <span class="block font-medium text-gray-800">🥤 คูปองชานม/ขนมหวาน 1 แก้ว</span>
+                            <span class="mt-1 block text-xs text-gray-500">กดรับแล้วเซฟไว้ใช้ได้เลย</span>
+                        </button>
+                        <button type="button" onclick="redeemCoupon(2, this)" class="w-full rounded-2xl border border-sky-100 bg-sky-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-100">
+                            <span class="block font-medium text-gray-800">😴 คูปองสิทธิ์พักสายตา 15 นาที</span>
+                            <span class="mt-1 block text-xs text-gray-500">พักสักนิด แล้วค่อยไปต่อนะ</span>
+                        </button>
+                        <button type="button" onclick="redeemCoupon(3, this)" class="w-full rounded-2xl border border-rose-100 bg-rose-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-100">
+                            <span class="block font-medium text-gray-800">🛡️ คูปองพื้นที่เซฟโซนไร้เงื่อนไข</span>
+                            <span class="mt-1 block text-xs text-gray-500">ตรงนี้รับฟังเธอได้เสมอ</span>
+                        </button>
+                    </div>
+                    <p id="couponFeedback" class="mt-4 min-h-6 text-center text-sm font-medium text-rose-600" role="status" aria-live="polite"></p>
+                `;
+            } else {
+                return;
+            }
+
+            modalBackdrop.setAttribute('aria-hidden', 'false');
+            modalBackdrop.classList.add('is-open');
+            document.body.classList.add('overflow-hidden');
+            modalPanel.focus();
+        }
+
+        function closeModal() {
+            if (!modalBackdrop.classList.contains('is-open')) return;
+            modalBackdrop.classList.remove('is-open');
+            modalBackdrop.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('overflow-hidden');
+            if (lastFocusedElement instanceof HTMLElement) lastFocusedElement.focus();
+        }
+
+        modalBackdrop.addEventListener('click', (event) => {
+            if (event.target === modalBackdrop) closeModal();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeModal();
+        });
+
+        function redeemCoupon(couponNumber, button) {
+            const feedback = document.getElementById('couponFeedback');
+            if (couponNumber === 1) {
+                showCouponToast('เซฟรูปนี้ไว้มาขึ้นเงินได้เลย!');
+            } else if (couponNumber === 2) {
+                feedback.textContent = 'พักสายตา 15 นาทีนะ เก่งมาก ✨';
+                floatCouponParticles(button);
+            } else if (couponNumber === 3) {
+                feedback.textContent = 'บ่นได้ทุกเรื่องตลอด 24 ชม.';
+            }
+        }
+
+        function showCouponToast(message) {
+            couponToast.textContent = message;
+            couponToast.classList.remove('opacity-0', 'translate-y-4');
+            couponToast.classList.add('opacity-100', 'translate-y-0');
+            window.clearTimeout(toastTimer);
+            toastTimer = window.setTimeout(() => {
+                couponToast.classList.add('opacity-0', 'translate-y-4');
+                couponToast.classList.remove('opacity-100', 'translate-y-0');
+            }, 2800);
+        }
+
+        function floatCouponParticles(button) {
+            const rect = button.getBoundingClientRect();
+            const particles = ['✨', '💖', '⭐', '💕', '🌟'];
+            for (let index = 0; index < 9; index++) {
+                const particle = document.createElement('span');
+                particle.className = 'coupon-particle';
+                particle.textContent = particles[index % particles.length];
+                particle.style.left = `${rect.left + Math.random() * rect.width}px`;
+                particle.style.top = `${rect.top + rect.height / 2}px`;
+                particle.style.animationDelay = `${Math.random() * 0.35}s`;
+                document.body.appendChild(particle);
+                particle.addEventListener('animationend', () => particle.remove(), { once: true });
+            }
+        }
+    </script>
+</body>
+</html>
+            
